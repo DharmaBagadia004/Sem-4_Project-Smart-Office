@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | OfficeHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel='shortcut icon' href='/Images/favicon.ico' type='image/x-icon' >
+    <link rel="stylesheet" href="/Css/Home_page.css">
+</head>
+<body>
+<%- include('nav')%>
+<main>
+    <div class="m-6 h-screen rounded-xl p-2">
+        <div class="border border-2 border-black rounded-xl h-46 p-4 mb-4 flex items-center justify-between bg-[#afd2f4]">
+            <div class="menu-left text-3xl ml-4"><%=team[0].team_name%></div>
+            <div class="menu-right font-bold flex flex-col justify-center items-center">
+                <div class="text-xl">Members</div>
+                <div><%= team[0].user1%></div>
+                <div><%= team[0].user2%></div>
+                <div><% if (team[0].user3!=null) { %><%= team[0].user3%> <% } %></div>
+                <div><% if (team[0].user4!=null) { %><%= team[0].user4%><% } %></div>
+            </div>
+        </div>
+        <div class="ml-max">
+            <div class="relative h-12 mb-4 -w-screen">
+                <div>
+                    <a href="../index/<%=team[0].tcode%>" class="text-sm hover:border hover:border-black hover:border-2 hover:rounded-xl p-2">Upload</a>
+                </div>
+                <div class="absolute bottom-0 right-0">
+                    <a href="/Message"><img class="msg w-12 rounded-3xl" src="/Images/msg.png" alt="msg"></a>
+                </div>
+              </div>
+        
+        </div>
+        <div class="h-64 border border-black">
+            </div>
+    </div>
+</main>
+<%- include('footer')%>
+</body>
+</html>
