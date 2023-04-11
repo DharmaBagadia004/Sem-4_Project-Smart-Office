@@ -1,9 +1,9 @@
-function uploadToServer(form, uploadProgressDisplayerId,val)
+function uploadToServer(form, uploadProgressDisplayerId)
 {
     let formData = new FormData(form);
 
     let xhr = new XMLHttpRequest();
-    
+    console.log("A:",form.action);
     xhr.open(form.method, form.action, true);
     
     xhr.upload.addEventListener('progress', function(ev)
@@ -38,3 +38,12 @@ function uploadToServer(form, uploadProgressDisplayerId,val)
 
     xhr.send(formData);
 }
+
+const code = function call(val)
+{
+    console.log("C:",val);
+    const v = val;
+    req.user = v;
+    next()
+}
+module.exports = code;

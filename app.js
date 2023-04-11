@@ -12,6 +12,7 @@ const port = 3000;
 const responsedelay = 50;   // miliseconds
 const auth = require("./controllers/auth");
 const File = require("./routes/file");
+const codec = require("./routes/code");
 
 // DATABASE
 const serv = require('./routes/connection').con;
@@ -21,6 +22,7 @@ const FileUpload = require("./routes/file");
 // static folders
 app.use(express.static('public'));
 app.use(express.static('userfiles'));
+app.use(express.static('uploads'));
 // app.use(express.static('views'));
 // app.use(express.static('CSS'));a
 // app.use(express.static('Images'));
@@ -31,11 +33,11 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(cookie());
 app.use(express.json());
 
-// app.set('view engine', 'pug');
 app.set('view engine', 'ejs');
 
 app.use("/js", express.static(path.join(__dirname, "/public/js")));
 app.use('/',require('./routes/pages'));
+app.use('/',require('./routes/Workflow_Upload'));
 
 //upload handler
 var uploadStorage = multer.diskStorage(
@@ -52,19 +54,21 @@ var uploadStorage = multer.diskStorage(
 });
 
 var upload = multer({ storage: uploadStorage });
-
-app.post('/', upload.single('file'), auth,function(req, res)
+app.post('/', upload.single('file'), function(req, res)
 {
-    const file = new FileUpload({
-        username: req.user.username,
-        fieldname: req.file.fieldname,
-        mimetype: req.file.mimetype,
-        destination:req.file.destination,
-        filename:req.file.filename,
-        path:req.file.path,
-        size:req.file.size
+    codec.findOne({number: 1}).then(function(a){
+        console.log("Code:",a.codec);
+        const file = new FileUpload({
+            username: a.codec,
+            fieldname: req.file.fieldname,
+            mimetype: req.file.mimetype,
+            destination:req.file.destination,
+            filename:req.file.filename,
+            path:req.file.path,
+            size:req.file.size
+        })
+        const files = file.save();
     })
-    const files = file.save();
     // console.log("Hello",req.file);
     console.log('file upload...');
 });
@@ -74,10 +78,9 @@ app.post('/files-list/:code', function(req, res)
 {
     let folder = req.query.folder;
     let contents = '';
-    // console.log("A:",req.params.id);
+
     let readingdirectory = `./userfiles/${folder}`;
-    // console.log(readingdirectory);
-    const code= req.params.code;
+    const code = req.params.code;
     File.find({username: code}).then(function(lists){
     fs.readdir(readingdirectory, function(err, files)
     {
@@ -86,31 +89,27 @@ app.post('/files-list/:code', function(req, res)
         {
             files.forEach(function(value, index, array)
             {
-                    // console.log("Value:",value);
-                    fs.stat(`${readingdirectory}/${value}`, function(err, stats)
-                    {
-                        let filesize = ConvertSize(stats.size);
-                        for(let i=0;i<lists.length;i++)
-                    {
-                        // console.log(i,"i",lists[i].filename);
-                        if(value==lists[i].filename)
-                        {
-                            contents += '<tr><td><a href="/' + folder + '/' + encodeURI(value) + '">' + value + '</a></td><td>' + filesize + '</td><td>/' + folder + '/' + value + '</td></tr>' + '\n';
-                            break;
-                        }
-                    }
-                        
-                        if(index == (array.length - 1)) { setTimeout(function() {res.send(contents);}, responsedelay); }
-                    });
-
-                    });
-                }
-                else
+                fs.stat(`${readingdirectory}/${value}`, function(err, stats)
                 {
-                    setTimeout(function() {res.send(contents);}, responsedelay);
+                    let filesize = ConvertSize(stats.size);
+                    for(let i=0;i<lists.length;i++)
+                    {
+                    if(value==lists[i].filename)
+                    {
+                    contents += '<tr><td><a href="/' + folder + '/' + encodeURI(value) + '">' + value + '</a></td><td>' + filesize + '</td><td>/' + folder + '/' + value + '</td></tr>' + '\n';
+                    break;
+                    }
                 }
-        });
-    });
+                    if(index == (array.length - 1)) { setTimeout(function() {res.send(contents);}, responsedelay); }
+                });
+            });
+        }
+        else
+        {
+            setTimeout(function() {res.send(contents);}, responsedelay);
+        }
+    })
+})
 });
 
 /*
@@ -146,7 +145,6 @@ app.post('/image-list', function(req, res)
             {
                 files.forEach(function(value, index, array)
                 {
-                    console.log("Hello");
                     fs.readFile(`./userfiles${directory}/${value}`, function(err, data)
                     {
                         if(err)

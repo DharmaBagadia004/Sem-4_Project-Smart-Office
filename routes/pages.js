@@ -1,7 +1,5 @@
 const express = require('express');
-// const logIn = require("../controlles/login"); 
-// const loggedIn = require("../controlles/loggedIn");
-// const mysql = require("./connection").con;
+
 const app = express();
 const path = require('path');;
 const bodyParser= require("body-parser");
@@ -9,12 +7,15 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cookie = require("cookie-parser");
 const randomstring = require('randomstring');
-
+const mongoose = require('mongoose');
 const auth = require('../controllers/auth');
 const User = require("./register");
 const fileup = require("./file");
 const team = require("./team");
 const feed_back = require("./feedback");
+const codec = require("./code");
+const apfile = require("./approvefile");
+const project = require("./project");
 const { log } = require('console');
 
 require('dotenv').config();
@@ -28,28 +29,15 @@ app.get('/', (req, res) => {
 });
 app.post("/login", async(req, res) => {
     try {
-        // const email = req.body.email;
-        // const password = req.body.password;
         const {email, password, username } = req.body;
-        // console.log(email,password,username);
         const userEmail = await User.findOne({ email: email });
-        // console.log("Mail:",userEmail);
         const isMatch = await bcrypt.compare(password, userEmail.password);
-
         const token = await userEmail.generateAuthToken();
-        // console.log(`The required token is ${token}`);
 
-        // Creating cookies
-        // console.log(`Expires time: ${process.env.COOKIE_EXPIRES * 90 * 24 * 60 * 60 * 1000}`);
         res.cookie("jwt", token, {
-            // expires: process.env.JWT_EXPIRES,
             expires: new Date(Date.now() + process.env.COOKIE_EXPIRES * 90 * 24 * 60 * 60 * 1000),
             httpOnly: true
         });
- 
-        // console.log("Hu ahi pochu chu!");
-        // console.log(`Cookie: ${req.cookies.jwt}`);
-
 
         if (isMatch) {
             console.log("User ",username," login successful");
@@ -61,7 +49,6 @@ app.post("/login", async(req, res) => {
         console.log(error)
         console.log("Hello");
         res.status(400).send("Invalid login details")
-            // res.status(201).render("index");
     }
 })
 
@@ -76,7 +63,6 @@ app.get('/home', auth, (req, res) => {
 app.post("/feedback", (req,res)=>{
     var name=req.body.feedname;
     var des = req.body.feeddes;
-    // console.log(name,des);
     const feed = new feed_back({
         feed_name: name,
         feed_des: des
@@ -86,32 +72,46 @@ app.post("/feedback", (req,res)=>{
 })
 
 app.get('/yourteam/:tcode',auth,(req,res)=>{
-    console.log("TCPDE:",req.params.tcode);
+    codec.findOneAndDelete({number: 1}).then(function(a){
+            const register = new codec({
+                number: '1',
+                codec: req.params.tcode
+            });
+            const save = register.save();
+    })
     team.find({tcode: req.params.tcode}).then(function(list){
-        // console.log("List:",list);
-        res.render("yourteam",{
-            data: req.user, team: list})
+        project.find().then(function(pot){
+
+            res.render("yourteam",{
+                data: req.user, team: list, pro: pot})
+        })
     })
 });
 
+app.post("/yourteam/:tcode", auth,(req,res)=>{
+    const feed = new project({
+        pro_name: req.body.pname,
+        pro_progress: '0',
+        codec: req.params.tcode
+    })
+    const f= feed.save()
+    let a = "/yourteam/";
+    let b = a.concat(req.params.tcode);
+    console.log(b);
+    team.find({tcode: req.params.tcode}).then(function(list){
+        project.find().then(function(pot){
+            res.render("yourteam",{
+                data: req.user, team: list, pro: pot})
+        })
+    })
+    // res.render("/yourteam/req.params.tcode")
+})
+
 app.get('/index/:code', auth,(req, res) => {
-    var c = req.params.code;
-    // fval(c);
     res.render("index",{
         data: req.user, code:req.params.code
     });
 });
-// let f = "";
-// function fval(val)
-// {
-//     let fc = (req,res)=>
-//     {
-//         console.log("VAL:",val);
-//         next();
-//         // return val;
-//     }
-    
-// }
 app.get('/about', auth,(req, res) => {
     res.render("about",{
         data: req.user
@@ -131,9 +131,7 @@ app.get('/account',auth,(req, res) => {
 app.get("/account/admin", auth,(req, res) => {
     User.find().then(function(lists){
         var let = req.user.role.toUpperCase();
-        // console.log("LET:",let);
         team.find().then(function(teams){
-            // console.log(teams);
             res.render("admin", { data: let,datas: lists,team: teams });  
         })
     })
@@ -150,7 +148,6 @@ app.get("/account/admin/user/:id",auth,(req,res)=>{
     res.redirect("/account/admin")
     }
 })
-
 app.get("/account/admin/team/:id",auth,(req,res)=>{
     if(req.user.stafflogin==true)
     {
@@ -164,9 +161,7 @@ app.get("/account/admin/team/:id",auth,(req,res)=>{
 })
 
 app.post("/account/admin/register", async(req, res) => {
-    // console.log("REGISTER");
     try {
-        // console.log("REGISTER TRY");
         const password = req.body.password;
         const cPassword = req.body.confirmpassword;
 
@@ -180,15 +175,10 @@ app.post("/account/admin/register", async(req, res) => {
                 role: "employee"
             })
 
-            // console.log("the success part: " + registerCustomers);
             const token = await registerCustomers.generateAuthToken();
-            // console.log(`The required token is ${token}`);
-
-            // console.log("Ahi too pochi gayo!")
 
             const registered = await registerCustomers.save();
-            // console.log(registered);
-            // console.log("SUCCESSFUL");
+
             console.log("User",req.body.username,"Registered");
             res.status(201).redirect('/account/admin');
         } else {
@@ -203,7 +193,6 @@ app.post("/account/admin/register", async(req, res) => {
 })
 
 app.post("/account/admin/teamreg", async(req, res) => {
-    // console.log("REGISTER");
     let code = '';
     while (code.length < 5) {
     code += randomstring.generate({
@@ -212,7 +201,6 @@ app.post("/account/admin/teamreg", async(req, res) => {
     }
     console.log("Code:",code);
     try {
-        // console.log("REGISTER TRY");
         const tcode = code;
         const tname = req.body.team_name;
         const tdes = req.body.team_des;
@@ -265,15 +253,75 @@ app.post("/account/admin/teamreg", async(req, res) => {
     } catch (error) {
         res.status(400).send(error);
     }
+
+})
+
+app.get('/DocFlow', auth,(req, res) => {
+    res.render("DocFlow",{data: req.user});
+});
+app.get('/ApprovedDoc', auth,(req, res) => {
+    if(req.user.role=="admin")
+    {
+        apfile.find({DocStatus: "approved"}).then(function(lists){
+            res.render("ApprovedDoc", { approval: lists,data: req.user});  
+        })
+    }
+    else
+    {
+        apfile.find({DocStatus: "approved",username: req.user.username}).then(function(lists){
+                res.render("ApprovedDoc", { approval: lists,data: req.user});  
+        })
+    }
+});
+app.get('/RejectedDoc', auth,(req, res) => {
+    if(req.user.role=="admin")
+    {
+        apfile.find({DocStatus: "rejected"}).then(function(lists){
+            res.render("RejectedDoc", { approval: lists,data: req.user});  
+        })
+    }
+    else
+    {
+        apfile.find({DocStatus: "rejected",username: req.user.username}).then(function(lists){
+                res.render("RejectedDoc", { approval: lists,data: req.user});  
+        })
+    }
+});
+app.get('/PendingDoc', auth, (req, res) => {
+    if(req.user.role=="admin")
+    {
+        apfile.find({DocStatus: "pending"}).then(function(lists){
+            res.render("PendingDoc", { approval: lists,data: req.user}); 
+        })
+    }
+    else
+    {
+        apfile.find({DocStatus: "pending",username: req.user.username}).then(function(lists){
+            res.render("PendingDoc", { approval: lists,data: req.user});
+        })
+    }
+});
+
+app.get("/PendingDoc/approve/:id",auth,async(req,res)=>{
+    const a = await apfile.findOneAndUpdate({_id: req.params.id},{DocStatus:"approved"},{
+        new: true
+      });
+    res.redirect("/PendingDoc");
+})
+
+app.get("/PendingDoc/reject/:id",auth,async(req,res)=>{
+    const a = await apfile.findOneAndUpdate({_id: req.params.id},{DocStatus:"rejected"},{
+        new: true
+      });
+    res.redirect("/PendingDoc");
 })
 
 app.get("/message",auth,(req,res)=>{
-    res.redirect("message");
+    res.render("message");
 })
 
 app.get("/logout", auth,async(req, res) => {
     try {
-        // console.log(req.user);
         console.log(`Logged-out out from ${req.user.username}'s account!!`);
         res.clearCookie('jwt');
 

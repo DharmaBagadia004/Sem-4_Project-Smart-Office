@@ -8,51 +8,50 @@ const Schema = mongoose.Schema;
 
 // Decalring the user schema
 const usersSchema = new Schema({
-    team_name: {
+    username: {
+        type: String,
+        required: true,
+        min: 2,
+        max: 50
+    },
+
+    DocTitle: {
         type: String,
         required: true,
         min: 1,
         max: 50
     },
 
-    team_des: {
+    DocType: {
         type: String,
         required: true,
         min: 1,
         max: 200
     },
-    tcode: {
-        type: String,
-        required: true,
-        min: 1,
-        max: 50
-    },
-    user1: {
+    DocDate: {
         type: String,
         required: true,
         min: 1,
         max: 200
     },
-    user2: {
-        type: String,
-        required: true,
-        min: 1,
-        max: 200
-    },
-    user3: {
+    Docpath: {
         type: String,
         default: true,
         min: 1,
         max: 200
     },
-    user4: {
+    DocStatus: {
         type: String,
-        default: true,
+        required: true,
         min: 1,
         max: 200
-    }  
-})
+    },
+    Docsize: {
+        type: Number,
+        default: true,
+    },
 
+});
 // Creating collections:
-const team = new mongoose.model("team", usersSchema);
-module.exports = team;
+const approval = new mongoose.model("approval", usersSchema);
+module.exports = approval;

@@ -83,18 +83,6 @@ usersSchema.pre("save", async function(next) {
     next();
 })
 
-// usersSchema.fetchuser = {
-//     function(callback){
-//        var userData=userTable.find({});
-//        userData.exec(function(err, data){
-//            if(err) throw err;
-//            return callback(data);
-//        })
-       
-//     }
-// }
-
-
 // Creating collections:
 const User = new mongoose.model("User", usersSchema);
 module.exports = User;

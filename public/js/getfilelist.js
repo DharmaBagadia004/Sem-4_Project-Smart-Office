@@ -13,11 +13,7 @@ const table =
  * @param loadinggifid until waiting for response from server, this (gif) image will be displayed.
  */
 function getListOfFiles(filestype, fileholderid, loadinggifid,val)
-{   if(val=="ign2r")
 {
-    console.log("YES");
-}
-    console.log("VAl1212:",val);
     // console.log("HELLO");
     const fileholder = document.getElementById(fileholderid);
     // console.log("FILEHOLDER:",fileholder);
@@ -42,17 +38,18 @@ function getListOfFiles(filestype, fileholderid, loadinggifid,val)
             else { fileholder.innerHTML = table + this.responseText + "</table>"; }
         }
     };
+    
     switch(filestype)
     {
         case "image":
             requestedfileslist = "image-list";
             break;
         default:
-            let c = "files-list/"
+            let c= "files-list/"
             requestedfileslist = c.concat(val);
             break;
     }
-    console.log("ABCD:",requestedfileslist);
+
     if(requestedfileslist != "")
     {
         xhr.open("POST", "/" + requestedfileslist + "?folder=" + filestype, true);
